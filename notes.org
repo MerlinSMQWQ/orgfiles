@@ -279,7 +279,8 @@
 
 ** TODO PA1: 最简单的计算机
 
-*** TODO 按键测试程序：排查 _GNU_SOURCE 重复定义问题
+*** DONE 按键测试程序：排查 _GNU_SOURCE 重复定义问题
+    CLOSED: [2026-11-03 Tue 01:53]
 
 **** 背景
 
@@ -759,7 +760,8 @@ rg -n '__USE_GNU' abstract-machine/am/include/arch/native.h /usr/include/search.
 
 最后恢复了 =vme.c= 原来的排版，在两个头文件之间留了一行注释说明顺序依赖。Neovim 也只对 =~/WorkSpace/ics2026= 里的 C/C++ 文件关闭了保存时自动格式化。
 
-**** TODO 验证修复结果
+**** DONE 验证修复结果
+     CLOSED: [2026-11-03 Tue 01:54]
 
 修复后，=am-native.a= 已成功生成，=amtest-native.elf= 也已链接成功。用 SDL 无窗口模式启动按键测试，终端打印了 =Try to press any key (uart or keyboard)...=。在桌面验证实际按键时运行：
 
@@ -785,9 +787,9 @@ make ARCH=native run mainargs=thwaite
 检查：
 
 - [X] =thwaite= 已成功启动，修复后的桌面运行验证见[[*FCEUX 运行几秒后在 SDLTimer 线程里段错误][段错误排查记录]]。
-- [ ] 图形是否正常显示。
-- [ ] 键盘输入是否正常。
-- [ ] 音频是否正常播放。
+- [X] 图形是否正常显示。
+- [X] 键盘输入是否正常。
+- [X] 音频是否正常播放。
 
 **** Notes：本次 Debug 学到的知识
 
