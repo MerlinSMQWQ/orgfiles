@@ -784,7 +784,7 @@ make ARCH=native run mainargs=thwaite
 
 检查：
 
-- [ ] 游戏是否能够正常启动。
+- [X] =thwaite= 已成功启动，修复后的桌面运行验证见[[*FCEUX 运行几秒后在 SDLTimer 线程里段错误][段错误排查记录]]。
 - [ ] 图形是否正常显示。
 - [ ] 键盘输入是否正常。
 - [ ] 音频是否正常播放。
@@ -871,3 +871,45 @@ make ARCH=native run mainargs=thwaite
 #+end_example
 
 *本次最重要的收获，不是记住某个 GCC 参数，而是学习如何利用编译器提供的信息，从一个具体错误出发，逐步追踪整个构建系统。*
+
+*** DONE FCEUX 运行几秒后在 SDLTimer 线程里段错误
+
+这次编译和链接都成功了，终端甚至已经打印了 =Found ROM 'thwaite'= 和 =Power on=。可游戏跑了没一会儿，=make= 就报“段错误（核心已转储）”。看到最后一行 =Initializing video...=，我第一反应是视频初始化失败了。后来用 GDB 在桌面复现，才发现它连第 4 秒的帧率都打印出来了。光看最后一行日志，猜不到到底是哪一行代码崩了。
+
+**** 用 GDB 找到崩溃的线程
+
+排查时直接调试 =make run= 启动的可执行文件，用环境变量把 ROM 名传给它：
+
+#+begin_src bash
+cd ~/WorkSpace/ics2026/fceux-am
+mainargs=thwaite gdb ./build/fceux-native.elf
+#+end_src
+
+#+begin_example
+(gdb) handle SIGUSR1 SIGUSR2 nostop noprint pass
+(gdb) run
+Thread 2 "SDLTimer" received signal SIGSEGV, Segmentation fault.
+(gdb) bt
+...
+#3  0x00006438d478b536 in texture_sync ()
+...
+#+end_example
+
+第一条命令让 AM 使用的两个信号照常交给程序处理。真正收到 =SIGSEGV= 时，GDB 停在了 =SDLTimer= 线程。顺着 =bt= 给出的调用栈往回看，最靠近崩溃位置的课程代码是 =abstract-machine/am/src/native/ioe/gpu.c= 里的 =texture_sync()=。
+
+**** 同一块画面缓冲区被两个线程同时使用
+
+旧驱动用 =SDL_AddTimer(1000 / 60, ...)= 大约每 16 毫秒刷新一次窗口。游戏线程正逐行往 =surface= 写像素，定时器线程却可能同时进入 =SDL_BlitScaled()=，从同一个 =surface= 读取并缩放画面。两边没有同步。这也解释了为什么同一个 ROM 有时刚启动就崩，有时却能先跑几秒。SDL 要求缩放时一个 surface 同一时刻只由一个线程使用，窗口刷新也应在主线程进行。[[https://wiki.libsdl.org/SDL3/SDL_BlitSurfaceScaled#thread-safety][SDL 的 surface 线程要求]] · [[https://wiki.libsdl.org/SDL3/SDL_UpdateWindowSurface#thread-safety][窗口刷新的线程要求]]
+
+FCEUX 本来就会告诉 AM 什么时候画完了一帧。=fceux-am/src/drivers/sdl/sdl-video.cpp= 里有两种写法：
+
+#+begin_src c
+io_write(AM_GPU_FBDRAW, x, y, canvas_line, NWIDTH, 1, false); // 写一行像素
+io_write(AM_GPU_FBDRAW, 0, 0, NULL, 0, 0, true);             // 整帧画完，请求刷新
+#+end_src
+
+第二次调用的宽和高都是零，因为要显示的像素已经写完了。旧驱动遇到零宽或零高就直接返回，连这个刷新请求也跳过了。修复只改了 native 的 =gpu.c=。现在使用普通 SDL 窗口，并移除了后台刷新定时器。驱动有像素时写入缓冲区，收到 =sync=true= 时再由游戏主线程缩放并刷新窗口。这样即使请求里没有新像素，已经画好的整帧也能显示。
+
+**** 用同一个 ROM 验证
+
+用原命令 =make ARCH=native run mainargs=thwaite= 启动，修复版在桌面连续运行了 35 秒，帧率约 59–60 FPS，直到测试按时结束。无窗口模式也运行了 35 秒，AM 自带的视频测试持续输出约 29–30 FPS。游戏内的按键和进入关卡后的声音仍待实测。
