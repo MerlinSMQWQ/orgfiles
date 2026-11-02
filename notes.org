@@ -1,67 +1,101 @@
 * ics2026
+
 ** DONE PA0: 开始 ics2026，首先起源于配置
    SCHEDULED: <2026-10-28 Wed> CLOSED: [2026-10-29 Thu 22:41]
+
 *** DONE install GNU/Linux
     CLOSED: [2026-10-28 Wed 16:26]
     处理: 直接用的服务器，系统版本
+
 *** DONE first exploration with GNU/Linux
     CLOSED: [2026-10-28 Wed 16:26]
+
 *** DONE install tools
     CLOSED: [2026-10-28 Wed 16:26]
+
 *** DONE configure neovim/git
     CLOSED: [2026-10-28 Wed 16:26]
-  处理: 使用的是我本地的 neovim 配置, 其实也可以使用 neovide 远程，但是直接在服务器上配置好更方便使用
-  notes: 如果想要快速了解 git 的配置和使用可以看这个: [[https://www.gnu.org/software/make/manual/make.html][NJU git 快速入门]]
-    总的来说，想要正常使用 git，需要做一些配置：
+
+    处理: 使用的是我本地的 neovim 配置, 其实也可以使用 neovide 远程，但是直接在服务器上配置好更方便使用
+
+    notes: 如果想要快速了解 git 的配置和使用可以看这个: [[https://www.gnu.org/software/make/manual/make.html][NJU git 快速入门]]
+
+      总的来说，想要正常使用 git，需要做一些配置：
+
       - 首先是安装 git 以及 ssh（因为很多时候我们都要用 ssh 来拉取或者上传仓库）
+
         #+begin_src bash
         sudo apt update
         sudo apt install git openssh-client
         git --version
         ssh -V
         #+end_src
+
       - 在正常输出 git 和 ssh 版本号以后，就可以开始下一步了。对 git 做一些简单的配置，--global 只作用于当前系统用户，不是整台机器。若使用的是多人共用的账号，不建议在里面配置个人长期凭据；署名也可在具体仓库内去掉 --global 单独设置。仅 clone／pull 不需要配置署名，commit 才需要
+
         #+begin_src bash
         git config --global user.name "你的名字"
         git config --global user.email "你的提交邮箱"
         git config --global init.defaultBranch main
         #+end_src
+
       - 配置好了以后，检查旧密钥，再生成服务器专用密钥（ssh key）
+
         #+begin_src bash
         ls -la ~/.ssh
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
         ssh-keygen -t ed25519 -C "server-git" -f ~/.ssh/id_ed25519_git
         #+end_src
+
         如果提示该文件已存在，别覆盖，换个名字。交互使用建议设置 passphrase（私钥口令）。生成后：
+
           - id_ed25519_git：私钥，留在服务器上，不要发给别人。
+
           - id_ed25519_git.pub：公钥，添加到 Git 平台。
+
       - 然后查看公钥，并复制它
+
         #+begin_src bash
         cat ~/.ssh/id_ed25519_git.pub
         #+end_src
+
       - 把公钥复制到: [[https://github.com/settings/keys][github keys]]
+
       - 然后测试一下 ssh
+
         #+begin_src bash
         ssh -T git@github.com
         #+end_src
+
         如果有了正确的返回，就说明配置成功了，之后可以使用 ssh 来对远端 github 进行一些操作，这样会更加稳定
+
 *** DONE more exploration
     CLOSED: [2026-10-29 Thu 22:41]
+
     - [X] write a "Hello World" program under GNU/Linux
+
       处理: 正常地使用 neovim 完成程序的编写
+
     - [X] write a makefile to compile the "Hello World" program
+
       问题: 我对 makefile 不太熟悉，需要去学习一下 C 的 makefile 怎么使用
+
       处理: 这里有一个 make 的详细说明文档，不过内容非常多: [[https://www.gnu.org/software/make/manual/make.html][GNU Make]]
+      
       notes: 我尝试了一下静态链接和动态链接，并且理解了一下静态链接和动态链接的区别
+
         这里有几个我需要讲述的例子：首先是我的代码，我的结构是:
+
           #+begin_src bash
           .
           ├── foo.c
           ├── main.c
           └── Makefile
           #+end_src
+
         mian.c 的内容是:
+
           #+begin_src c
           #include <stdio.h>
 
@@ -72,7 +106,9 @@
             return 0;
           }
           #+end_src
+
         foo.c 的内容是:
+
           #+begin_src c
           int foo(int n) {
           int sum = 0;
@@ -82,44 +118,58 @@
           return sum;
         }
           #+end_src
+
         如果此时直接编译 main.c，使用命令 ~gcc main.c~ 将会得到一个错误:
+
           #+begin_src                                                                                                                     gcc main.c                                                                                                                      /usr/bin/ld: /tmp/ccCI5ODc.o: in function `main':
           main.c:(.text+0xe): undefined reference to `foo'
           collect2: error: ld returned 1 exit status
           #+end_src
+
         直接编译 main.c 在链接阶段是拿不到 foo 这个函数的具体实现的，而要想成功实现必须要拿到 foo 函数的实现，这个实现在 foo.c 中
         那我们传参的时候将 main.c 和 foo.c 都作为参数传给 gcc，就可以成功编译:
+
           #+begin_src
           gcc main.c foo.c
           #+end_src
+
         然后就生成了一个 a.out，一个 ELF 文件，使用 ~file~ 命令可以看到这个文件的详细信息:
+
           #+begin_src
           file a.out
           a.out: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=
           93148bad4d02bdbba28e91f97fab71eaef633542, for GNU/Linux 3.2.0, not stripped
           #+end_src
+
         这是一个动态链接产生的 ELF 文件，并且这个链接的过程还是自动的
         我们只需要告诉 gcc 我们有两个文件是需要一起编译的，gcc 很智能地就发现了 foo 函数是需要链接的内容
         但是这个过程也可以手动完成，命令我们会这么写:
+
           #+begin_src bash
           gcc -c foo.c
           gcc -c main.c
           gcc main.o foo.o -o main
           #+end_src
+
         这样得到了 main 这个 ELF 文件，使用 ~file~ 命令检查属性，会发现他和 ~gcc main.c foo.c~ 所得到的 ELF 文件一样也是动态链接来的
         执行也能发现结果是正确的，说明 *自动链接和手动链接与动态链接和静态链接并不冲突，是两个维度*
         我们也可以试试静态链接
         自动静态链接就是：
+
           #+begin_src bash
           gcc main.c foo.c -static
           #+end_src
+
         还是通过 ~file~ 来查看属性
+
           #+begin_src
           file a.out
           a.out: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, BuildID[sha1]=4576da3ac087f8f4fdc3c1938f2796b7b50f06d5,
           for GNU/Linux 3.2.0, not stripped
           #+end_src
+
         也可以手动：
+      
           #+begin_src bash
           gcc -c main.c
           gcc -c foo.c
@@ -129,6 +179,7 @@
         实际上 Makefile 就是帮助我们编译项目的，实际的项目大概不会这样简单，它有非常多的组件，还有各种依赖，如果还是一行一行命令地构建，人总会犯错而且也很难纠正
         使用 Makefile 可以简化这个过程，另外 Makefile 还有特别的优势：Makefile 真正不可替代的地方是依赖关系和增量构建，这个优势将会在后面体会
         我们的 Makefile 将会如此组织
+
           #+begin_src Makefile
           main: main.o foo.o
             gcc main.o foo.o -static -o main
@@ -139,30 +190,43 @@
           foo.o: foo.c
             gcc -c foo.c
           #+end_src
+
         执行命令 ~make~ 即可，并且也还是可以用 ~file~ 命令来查看 ELF 文件的属性
+
     - [X] use GDB
+
       问题: 我之前使用 GDB 用的不多，直接上手也是不熟练的，需要多多练习
+      
       处理: 参考阅读：[[https://linuxconfig.org/gdb-debugging-tutorial-for-beginners][GDB 使用教程]]、[[https://linuxconfig.org/debugging-bash-shell-scripts-techniques][Debug bash script techniques]]、[[https://linuxconfig.org/how-to-debug-bash-scripts][how to debug bash script]]
-      notes:
+
 *** DONE get source code from PAs                                                                                                   CLOSED: [2026-10-28 Wed 18:32]
     问题: ~make menuconfig~ 在运行的时候发现缺少了 bison 和 flex 等工具
     处理: 可以直接通过 ~sudo apt install bison flex~ 安装
     验证: 再运行 ~make menuconfig~
 
 ** TODO 尝试: 尝试在 Ubuntu 上使用 Guix 包管理器并入门 Guix
+
 *** DONE 安装 Ubuntu26.10
     CLOSED: [2026-10-31 Sat 16:33]
-*** TODO 安装并使用口碑听起来不错的 noctalia shell
-    - [ ] 安装一些必备的软件
+
+*** DONE 安装并使用口碑听起来不错的 noctalia shell
+    CLOSED: [2026-11-02 一 20:19]
+
+    - [X] 安装一些必备的软件
+
       目前来说必备的软件主要就是代理软件,我选择的是使用 *FlClash* 作为我在 Ubuntu 上的代理软件, 主要是很好看.
       此外还有一些工具链, 编辑器之类的也都需要安装.
+
     - [X] 安装 Niri
+
       安装 Niri 是很简单的, 使用 apt install niri 就可以正常安装了, 这里有非常详细的开始文档 [[https://niri-wm.github.io/niri/Getting-Started.html][niri 官方文档-开始 niri]]
       不过官方会让我们同时安装 dms(官方推荐我们这么做, 而且 dms 其实也蛮好看的), 我后续是打算直接使用 noctalia shell 而不是先使用 dms shell 再换成 noctalia shell
       但是我之前并不知道, 所以还是装了 dms, 这为后来带来了点小麻烦, 因为这样的话就会同时存在两个 shell, 他们虽然不会冲突, 但是会同时在桌面出现两个 Shell 的组件
       所以最终还是保留一个就行了, 我的选择是保留 nocatalia, 如果早知道的话我直接不装 dms 就行了.
       另外就是 GNOME 也没有被移除, 要是 Niri 出了问题可以切换回 GNOME, 而不会直接导致整个系统无法使用.
+
     - [X] 安装 noctalia shell
+
       其实这个过程也是蛮顺利的, 之前提到的 shell 的问题后来也是解决了. 官方给出了 Ubuntu 上的安装教程 [[https://docs.noctalia.dev/noctalia/getting-started/installation/?section=tab-panel-2-2#tab-panel-2-2][Ubuntu上如何安装 nocatalia shell]]
       如果 Ubuntu 在安装 noctalia shell 之前额外折腾过开发环境什么的, 那安装 noctalia 的时候几乎肯定会缺少一些依赖, 其中有一个依赖则是 Ubuntu26.10 不兼容
       这个依赖是 libsodium23, Ubuntu26.10 上默认已经是 libsodium26 了, 直接使用 apt 找包和下载的时候, 是下不到 libsodium23 的
@@ -174,27 +238,636 @@
       如果无法直接彻底关掉, 我建议直接 mask 掉 dms shell, 这样 log out 再 back in 就不会同时运行两个 shell 了.
       如果后续想从 Noctalia Shell 切换回 DMS Shell，需要先关闭 Noctalia，再恢复 DMS。
       首先检查 DMS 的 systemd 用户服务：
+
       #+begin_src bash
       systemctl --user list-unit-files | grep -i dms
       #+end_src
+
       如果之前使用了 =mask= 禁用 DMS，需要先解除屏蔽。假设对应服务是 =dms.service=：
+
       #+begin_src bash
       systemctl --user unmask dms.service
       systemctl --user enable --now dms.service
       #+end_src
+
       如果只是通过 =dms kill= 关闭 DMS，没有屏蔽 systemd 服务，则可以尝试直接运行：
+
       #+begin_src bash
       dms run
       #+end_src
+
       接下来还需要关闭 Noctalia 的自动启动。如果之前在 =~/.config/niri/config.kdl= 中配置了：
+
       #+begin_src kdl
       spawn-at-startup "noctalia"
       #+end_src
+
       就将其注释：
+
       #+begin_src kdl
       // spawn-at-startup "noctalia"
       #+end_src
+
       最后注销并重新登录 Niri，确认只有 DMS Shell 在运行。
       需要注意，DMS 的服务名称和启动命令可能随安装方式及版本变化，因此应以本机实际安装的服务和 =dms --help= 输出为准。如果此前屏蔽的是其他服务，也应解除对应服务的屏蔽。
-    - [ ] 配置 Linux
+
+    - [X] 配置 Linux
+
       主要就是输入法,git,浏览器,neovim,各类语言,Linux 的显示配置等
+
+*** TODO 安装并使用 Guix Home 以及 Guix 相关的东西
+
+** TODO PA1: 最简单的计算机
+
+*** TODO 按键测试程序：排查 _GNU_SOURCE 重复定义问题
+
+**** 背景
+
+在开始 PA1 的正式实验之前，ICS2026 讲义要求检查当前开发环境是否能够正常显示图形、响应键盘输入以及播放声音。
+
+讲义首先介绍了 =fceux-am=，这是一个移植到 Abstract Machine（AM）环境中的红白机模拟器，可以运行《导弹防线》等 NES 游戏。
+
+通过运行游戏，可以初步检查：
+
+- 图形显示是否正常。
+- 键盘输入是否能够响应。
+- 音频是否能够正常播放。
+
+为了进一步验证键盘输入功能，讲义要求使用 =am-kernels= 项目中的 =am-tests= 测试程序。
+
+这里需要注意，我们目前并不是在测试 NEMU，而是通过 =ARCH=native=，让 AM 程序运行在宿主机的 Linux 环境中。
+
+**** 问题：编译过程中出现 _GNU_SOURCE 重定义错误
+
+***** 1. 尝试运行 fceux-am
+
+按照官方文档，我首先下载了 =Thwaite.nes= ROM 文件，并将其放置在：
+
+#+begin_example
+fceux-am/nes/rom/
+#+end_example
+
+然后执行：
+
+#+begin_src bash
+cd fceux-am
+make ARCH=native run mainargs=thwaite
+#+end_src
+
+但是，在编译 =abstract-machine= 的 =vme.c= 时出现了错误：
+
+#+begin_example
+/home/merlinqwq/WorkSpace/ics2026/abstract-machine/am/src/native/vme.c:1:9: error: ‘_GNU_SOURCE’ redefined [-Werror]
+    1 | #define _GNU_SOURCE
+      |         ^~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+cc1: all warnings being treated as errors
+make[1]: *** [.../abstract-machine/Makefile:101: .../vme.o] 错误 1
+make: *** [.../abstract-machine/Makefile:132: .../am-native.a] 错误 2
+#+end_example
+
+***** 2. 尝试运行 am-tests
+
+随后，我按照讲义初始化 =am-kernels=：
+
+#+begin_src bash
+cd ics2026
+bash init.sh am-kernels
+#+end_src
+
+进入测试程序所在目录：
+
+#+begin_src bash
+cd am-kernels/tests/am-tests
+make ARCH=native mainargs=k run
+#+end_src
+
+其中：
+
+- =make=：读取 Makefile，根据其中的规则构建程序。
+- =ARCH=native=：设置 Make 变量，指定使用 AM 的 native 平台。
+- =mainargs=k=：设置传递给测试程序的参数，选择键盘测试。
+- =run=：Makefile 中定义的目标，负责构建并运行程序。
+
+但是，这一次仍然遇到了相同的错误：
+
+#+begin_example
+error: '_GNU_SOURCE' redefined [-Werror]
+<command-line>: note: this is the location of the previous definition
+#+end_example
+
+两个不同的程序都在编译 =abstract-machine/am/src/native/vme.c= 时失败。
+
+因此，可以初步判断，问题很可能与它们共同依赖的 AM native 构建过程有关，而不是测试程序自身的逻辑。
+
+**** 分析：从 GCC 的错误信息寻找线索
+
+最初，我只注意到了：
+
+#+begin_example
+error: '_GNU_SOURCE' redefined [-Werror]
+#+end_example
+
+这说明 =_GNU_SOURCE= 被重复定义了。
+
+检查对应的源文件：
+
+#+begin_src c
+#define _GNU_SOURCE
+#+end_src
+
+既然发生了重复定义，那么在处理这一行代码之前，编译器应该已经获得了 =_GNU_SOURCE= 的定义。
+
+最开始，我以为需要找到另一个包含 =#define _GNU_SOURCE= 的源文件。
+
+但是，仔细阅读 GCC 的诊断信息后，发现它实际上已经给出了重要线索：
+
+#+begin_example
+<command-line>: note: this is the location of the previous definition
+#+end_example
+
+这里的 =<command-line>= 表明，之前的宏定义来自编译命令行，而不是某个普通源代码文件。
+
+这让我意识到：问题可能不在 C 源文件之间，而在构建系统传递给 GCC 的参数中。
+
+因此，我们现在需要回答的问题是：
+
+1. GCC 是如何通过命令行定义宏的？
+2. 实际执行的 GCC 编译命令是什么？
+3. 是谁向 GCC 传递了这个宏定义？
+
+***** 关于 GCC 诊断信息的认识
+
+GCC 的诊断信息通常包含多个层次：
+
+- =error=：报告具体的错误。
+- =file:line:column=：指出错误所在的文件、行号和列号。
+- =note=：提供与错误有关的补充信息。
+
+例如本次：
+
+#+begin_example
+vme.c:1:9: error: '_GNU_SOURCE' redefined [-Werror]
+<command-line>: note: this is the location of the previous definition
+#+end_example
+
+如果没有注意到第二行，就很容易在错误的方向上浪费时间。
+
+因此，以后排查编译问题时，应该首先完整阅读编译器的诊断信息，再决定使用什么工具。
+
+**** 假设一：GCC 通过 -D 参数预先定义了宏
+
+查阅 GCC 的文档后发现，GCC 支持通过 =-D= 参数定义宏。
+
+例如：
+
+#+begin_src bash
+gcc -DHELLO=1 ...
+#+end_src
+
+相当于在预处理阶段为源文件提供：
+
+#+begin_src c
+#define HELLO 1
+#+end_src
+
+因此，我们提出第一个假设：
+
+构建系统可能向 GCC 传递了：
+
+#+begin_example
+-D_GNU_SOURCE=1
+#+end_example
+
+与此同时，=vme.c= 又包含：
+
+#+begin_src c
+#define _GNU_SOURCE
+#+end_src
+
+这两个定义的替换列表不同，可能引发宏重定义警告。
+
+而项目又启用了 =-Werror=，将警告作为错误处理，因此导致编译失败。
+
+***** 验证：观察 GCC 实际执行的命令
+
+问题是，我们之前一直通过 =make= 构建程序，并不知道 Make 最终向 GCC 传递了哪些参数。
+
+查阅 GNU Make 的用法后，了解到：
+
+#+begin_src bash
+make -n
+#+end_src
+
+可以打印 Make 准备执行的命令，而不实际执行普通的构建命令。
+
+于是，在 =am-tests= 目录下执行：
+
+#+begin_src bash
+make ARCH=native mainargs=k -n run
+#+end_src
+
+由于输出内容较多，可以结合 =rg= 搜索：
+
+#+begin_src bash
+make ARCH=native mainargs=k -n run | rg -n -C 3 '_GNU_SOURCE'
+#+end_src
+
+其中：
+
+- =|=：Shell 管道，将前一个命令的标准输出传递给后一个命令。
+- =rg=：ripgrep，用于搜索文本。
+- =-n=：显示匹配结果的行号。
+- =-C 3=：显示匹配行及其前后各三行。
+
+如果 Make 认为目标已经是最新的，导致没有输出对应的编译命令，还可以使用：
+
+#+begin_src bash
+make -B -n ARCH=native mainargs=k run
+#+end_src
+
+其中 =-B= 表示要求 Make 将所有目标视为需要重新构建。
+
+通过检查编译命令，发现其中包含：
+
+#+begin_example
+-D_GNU_SOURCE=1
+#+end_example
+
+至此，我们可以确认，GCC 的确通过命令行获得了 =_GNU_SOURCE= 的定义。
+
+但是，问题还没有完全解决：
+
+*是谁将这个参数添加到 GCC 的编译命令中的？*
+
+**** 假设二：编译参数来自 AM 的构建系统
+
+接下来，我们需要追踪 Makefile 是如何生成 GCC 编译命令的。
+
+这里遇到了一个很有意思的问题：
+
+我们明明是在 =am-kernels/tests/am-tests= 目录下运行 =make=，为什么错误信息却指向：
+
+#+begin_example
+abstract-machine/Makefile
+#+end_example
+
+为了弄清楚这个问题，我们开始检查 Makefile 之间的关系。
+
+***** 1. 检查 am-tests 的 Makefile
+
+打开：
+
+#+begin_example
+am-kernels/tests/am-tests/Makefile
+#+end_example
+
+可以看到：
+
+#+begin_src makefile
+NAME = amtest
+SRCS = $(shell find src/ -name "*.[cS]")
+include $(AM_HOME)/Makefile
+#+end_src
+
+这里最重要的是：
+
+#+begin_src makefile
+include $(AM_HOME)/Makefile
+#+end_src
+
+GNU Make 支持通过 =include= 引入其他 Makefile。
+
+而 =AM_HOME= 指向 =abstract-machine= 的根目录。
+
+所以，虽然我们在 =am-tests= 目录下执行 =make=，实际的构建规则还包含了 =abstract-machine/Makefile= 中的内容。
+
+这解释了为什么错误会发生在另一个项目的构建过程中。
+
+***** 2. 继续追踪 abstract-machine/Makefile
+
+接着检查：
+
+#+begin_example
+abstract-machine/Makefile
+#+end_example
+
+其中存在：
+
+#+begin_src makefile
+-include $(AM_HOME)/scripts/$(ARCH).mk
+#+end_src
+
+这一行非常重要。
+
+我们之前执行的是：
+
+#+begin_src bash
+make ARCH=native mainargs=k run
+#+end_src
+
+其中 =ARCH=native= 会设置 Make 变量 =ARCH=。
+
+因此：
+
+#+begin_src makefile
+$(AM_HOME)/scripts/$(ARCH).mk
+#+end_src
+
+经过变量展开后，实际上就是：
+
+#+begin_example
+abstract-machine/scripts/native.mk
+#+end_example
+
+也就是说，Make 会根据 =ARCH= 的值加载对应平台的构建配置。
+
+这让我们找到了之前完全没有注意过的文件：
+
+#+begin_example
+abstract-machine/scripts/native.mk
+#+end_example
+
+这里还学到了一个知识点：
+
+=include= 与 =-include= 都可以引入 Makefile，但 =-include= 在被引入的文件不存在等情况下不会因此直接报错。
+
+***** 3. 检查 scripts/native.mk
+
+在 =native.mk= 中，可以看到 native 平台相关的源文件配置，其中包含：
+
+#+begin_example
+native/vme.c
+#+end_example
+
+这也解释了为什么即使只是测试键盘输入，构建过程中仍然需要编译虚拟内存相关的 =vme.c=。
+
+继续检查编译参数，发现：
+
+#+begin_src makefile
+CFLAGS += -fpie $(shell sdl2-config --cflags)
+#+end_src
+
+这里涉及三个新的知识点：
+
+- =CFLAGS=：通常用于保存 C 编译器的选项。
+- =+==：在 Makefile 中向变量追加内容。
+- =$(shell ...)=：执行 Shell 命令，并取得命令的标准输出。
+
+所以，这一行会调用：
+
+#+begin_src bash
+sdl2-config --cflags
+#+end_src
+
+并将它的输出追加到 =CFLAGS= 中。
+
+SDL2 是一个跨平台多媒体开发库，AM 的 native 实现需要利用它来访问宿主机的图形、输入等功能。
+
+因此，我们有理由提出新的假设：
+
+*SDL2 提供的编译参数中可能包含 =-D_GNU_SOURCE=1=，而 Makefile 将该参数传递给了 GCC。*
+
+***** 4. 验证 SDL2 的编译参数
+
+可以直接在终端执行：
+
+#+begin_src bash
+sdl2-config --cflags
+#+end_src
+
+检查输出中是否包含：
+
+#+begin_example
+-D_GNU_SOURCE=1
+#+end_example
+
+如果确实包含这一参数，就能进一步确认宏定义的来源。
+
+也可以使用：
+
+#+begin_src bash
+rg -n 'sdl2-config|_GNU_SOURCE' abstract-machine
+#+end_src
+
+搜索项目中与 SDL2 和该宏有关的配置。
+
+***** 5. 总结 Makefile 的加载过程
+
+经过上述分析，我们找到了以下构建关系：
+
+#+begin_example
+am-tests/Makefile
+       |
+       | include $(AM_HOME)/Makefile
+       v
+abstract-machine/Makefile
+       |
+       | -include $(AM_HOME)/scripts/$(ARCH).mk
+       | ARCH=native
+       v
+abstract-machine/scripts/native.mk
+       |
+       | CFLAGS += $(shell sdl2-config --cflags)
+       v
+sdl2-config
+       |
+       | 可能输出 -D_GNU_SOURCE=1
+       v
+GCC
+       |
+       | 预先定义 _GNU_SOURCE
+       v
+vme.c
+       |
+       | #define _GNU_SOURCE
+       v
+宏重复定义警告
+       |
+       | -Werror
+       v
+编译失败
+#+end_example
+
+这次调查让我意识到：
+
+Makefile 并不一定是独立的文件，它可以通过 =include= 组织其他 Makefile，还可以通过变量展开和 Shell 命令动态生成编译参数。
+
+因此，调查构建问题时，我们既要查看实际执行的编译命令，也要追踪生成这些命令的构建规则。
+
+**** DONE 修复第一处错误：给宏定义加保护
+
+本机的 =sdl2-config --cflags= 确实输出了 =-D_GNU_SOURCE=1=。我先修改了 =vme.c= 开头的宏定义。
+
+原来的代码：
+
+#+begin_src c
+#define _GNU_SOURCE
+#+end_src
+
+可以修改为：
+
+#+begin_src c
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+#+end_src
+
+这样可以保证：
+
+- 如果构建系统已经定义了 =_GNU_SOURCE=，则保留原有定义。
+- 如果构建系统没有定义，则由源文件自行定义。
+
+重新编译，=vme.c= 第一行的重定义错误消失了。继续编译时，=native/platform.c= 和 =native/ioe/audio.c= 也遇到了同样的重定义错误，这两处用了相同的保护。
+
+**** DONE 第二处错误：格式化竟然调换了头文件顺序
+
+我记得自己只给宏定义加了 =#ifndef= 保护，一行哈希表代码都没碰。结果再编译，GCC 却说 =struct hsearch_data= 类型不完整，=hcreate_r= 和 =hsearch_r= 也没有声明。最让我摸不着头脑的是，明明已经打开了 GNU 扩展，这三个名字怎么会一起消失？
+
+***** 从三个报错追到同一个条件
+
+这三个名字都来自宿主机的 =<search.h>=。打开本机的 =/usr/include/search.h=，能看到它们都在同一个 =#ifdef __USE_GNU= 里面。只要这个条件不成立，预处理器就会一次跳过结构体的完整定义和两个函数的声明。于是要查的问题就具体了：读到 =<search.h>= 的那一刻，=__USE_GNU= 还在吗？
+
+从课程仓库根目录可以这样查：
+
+#+begin_src bash
+git diff -- abstract-machine/am/src/native/vme.c
+rg -n '__USE_GNU' abstract-machine/am/include/arch/native.h /usr/include/search.h
+#+end_src
+
+排错时的 =git diff= 里，除了我记得的宏定义，还有这两行：
+
+#+begin_src diff
+-#include <search.h>
+ #include "platform.h"
++#include <search.h>
+#+end_src
+
+这里有两个长得很像的宏。源文件或编译命令定义的是 =_GNU_SOURCE=，glibc 的 =<features.h>= 据此设置内部宏 =__USE_GNU=。而 =<search.h>= 检查的是后者。先读 ="platform.h"= 时，会沿着 =platform.h → am.h → arch/native.h= 走到 =arch/native.h= 第 43 行：
+
+#+begin_src c
+#undef __USE_GNU
+#+end_src
+
+这就对上了。等轮到 =<search.h>= 时，条件已经不成立。恢复原来的顺序，让 =<search.h>= 先给出声明，后面的 =#undef= 也收不回已经读到的声明。
+
+***** 谁动了这两行？
+
+=git diff= 能看出文件变了，但看不出是谁改的。验证时，从 Git 取出原版 =vme.c=，只加上我写的宏保护，再用本机的 =clang-format 23.1.0= 按 LLVM 风格格式化一次。结果不光两个头文件换了位置，连指针旁边的空格、单行 =if= 的换行，都和报错时的文件逐字一致。这个实验复现了换序，但没法区分当时是保存时触发，还是手动执行了格式化。
+
+原来我完全可以没碰过那两行，它们还是会变。这次我一直盯着自己敲的 =#ifndef= 看，漏掉的恰好是编辑器替我做的那一步。下次再遇到“我只改了这一行”，我想先看一眼 =git diff=，再决定该盯着哪一行。
+
+最后恢复了 =vme.c= 原来的排版，在两个头文件之间留了一行注释说明顺序依赖。Neovim 也只对 =~/WorkSpace/ics2026= 里的 C/C++ 文件关闭了保存时自动格式化。
+
+**** TODO 验证修复结果
+
+修复后，=am-native.a= 已成功生成，=amtest-native.elf= 也已链接成功。用 SDL 无窗口模式启动按键测试，终端打印了 =Try to press any key (uart or keyboard)...=。在桌面验证实际按键时运行：
+
+#+begin_src bash
+cd ~/WorkSpace/ics2026/am-kernels/tests/am-tests
+make ARCH=native mainargs=k run
+#+end_src
+
+检查：
+
+- [X] 三个源文件中的 =_GNU_SOURCE= 重复定义错误已消失。
+- [X] AM native 库和按键测试程序已编译、链接成功。
+- [X] 按键测试已启动并进入等待输入的循环。
+- [X] 在 SDL 窗口里按下并松开一个键，核对终端里的键名、键码和 =DOWN= / =UP=。
+
+然后重新尝试运行 =fceux-am=：
+
+#+begin_src bash
+cd ~/WorkSpace/ics2026/fceux-am
+make ARCH=native run mainargs=thwaite
+#+end_src
+
+检查：
+
+- [ ] 游戏是否能够正常启动。
+- [ ] 图形是否正常显示。
+- [ ] 键盘输入是否正常。
+- [ ] 音频是否正常播放。
+
+**** Notes：本次 Debug 学到的知识
+
+***** 1. 阅读编译器的诊断信息
+
+不要只关注 =error=，还应该阅读 =warning= 和 =note=。
+
+编译器可能已经提供了问题的关键线索。
+
+***** 2. GCC 的常用参数
+
+| 参数           | 作用                         |
+|----------------+------------------------------|
+| -DNAME=VALUE   | 在预处理阶段定义宏           |
+| -E             | 只执行预处理                 |
+| -S             | 编译至汇编代码               |
+| -c             | 编译并汇编，但不链接         |
+| -o FILE        | 指定输出文件                 |
+| -I DIR         | 添加头文件搜索目录           |
+| -Wall          | 开启一组常用警告             |
+| -Werror        | 将警告视为错误               |
+
+***** 3. GNU Make 的常用参数
+
+| 参数       | 作用                         |
+|------------+------------------------------|
+| -n         | 打印准备执行的命令           |
+| -B         | 强制将所有目标视为需要重建   |
+| --debug=v  | 显示较详细的 Make 调试信息   |
+
+***** 4. Shell 与文本搜索工具
+
+| 命令或参数 | 作用                         |
+|------------+------------------------------|
+| \vert      | 将命令的输出传递给下一个命令 |
+| rg         | 搜索文本                     |
+| rg -n      | 显示匹配行号                 |
+| rg -C N    | 显示匹配行前后 N 行           |
+| less -S    | 分页查看，不自动换行         |
+
+***** 5. Makefile 的组织方式
+
+本次了解到：
+
+- Makefile 可以通过 =include= 引入其他文件。
+- Makefile 支持变量展开，例如 =$(ARCH)=。
+- 命令行可以覆盖或设置 Make 变量。
+- =$(shell ...)= 可以在构建配置中执行 Shell 命令。
+- 编译参数可能不是直接写在 Makefile 中，而是动态生成的。
+
+***** 6. 一般性的 Debug 思路
+
+本次问题可以总结为：
+
+#+begin_example
+观察错误现象
+      |
+      v
+阅读完整诊断信息
+      |
+      v
+提取关键线索
+      |
+      v
+提出假设
+      |
+      v
+寻找能够验证假设的工具
+      |
+      v
+检查实际编译命令
+      |
+      v
+追踪构建配置
+      |
+      v
+确定根因
+      |
+      v
+修复并重新验证
+#+end_example
+
+*本次最重要的收获，不是记住某个 GCC 参数，而是学习如何利用编译器提供的信息，从一个具体错误出发，逐步追踪整个构建系统。*
